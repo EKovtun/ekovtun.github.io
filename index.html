@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset=utf-8/>
+    <title>Kovtun Tree</title>
+    <style>
+        body {
+            padding-top: 50px;
+            padding-left: 50px;
+        }
+    </style>
+</head>
+<body>
+<p>Введите номер вершины родителя для добавления или номер вершины для удаления: </p>
+<input type="text" id="parent"/>
+<input type="button" id="addVertex" value="Добавить вершину к родителю с указанным номером"
+       onclick="add_element_to_array();"/>
+<input type="button" id="deleteVertex" value="Удалить вершину с указанным номером" onclick="delete_element();"/>
+<input type="button" id="clear" value="Очистить дерево" onclick="clear_tree();"/>
+<canvas id="canvas" width="1000" height="1000"></canvas>
+
+<script>
+    let number = 3
+    let vertexes = [{parent: -1, number: 0}, {parent: 0, number: 1}, {parent: 0, number: 2}, {parent: 0, number: 3}];
+    let inOut = []
+    let counter = 0
+
+    function add_element_to_array() {
+        let value = parseInt(document.getElementById("parent").value, 10)
+        if (!vertexes.some(vertex => vertex.number === value)) return
+        vertexes.push({parent: value, number: ++number})
+        execution()
+    }
+
+    function delete_element() {
+        let value = parseInt(document.getElementById("parent").value, 10)
+        if (value === 0) return
+        let deletedVertex = vertexes.find(vertex => vertex.number === value)
+        if (!deletedVertex) return
+        recursive_deleted(deletedVertex)
+        ordered()
+        execution()
+    }
+
+    function recursive_deleted(currentRoot) {
+        vertexes = vertexes.filter(vertex => vertex.number !== currentRoot.number)
+        let children = vertexes.filter(vertex => vertex.parent === currentRoot.number)
+        for (let i = 0; i < children.length; ++i) recursive_deleted(children[i])
+    }
+
+    function ordered() {
+        for (number = 0; number < vertexes.length; number++) {
+            let oldNumber = vertexes[number].number
+            let children = vertexes.filter(vertex => vertex.parent === oldNumber)
+            for (let i = 0; i < children.length; ++i) {
+                children[i].parent = number
+            }
+            vertexes[number].number = number
+        }
+        --number
+    }
+
+    function clear_tree() {
+        vertexes = [{parent: -1, number: 0}]
+        number = 0
+        execution()
+    }
+
+    function execution() {
+        let canvas = document.getElementById("canvas").getContext("2d");
+        canvas.clearRect(0, 0, 1000, 1000)
+        inOut = []
+        counter = 0
+        processTree(vertexes.find(vertex => vertex.parent === -1), 1)
+        draw(inOut.find(vertex => vertex.number === 0), canvas)
+    }
+
+    function processTree(currentRoot, deep) {
+        console.log(vertexes)
+        let children = vertexes.filter(vertex => vertex.parent === currentRoot.number)
+
+        for (let i = 0; i < Math.round(children.length / 2); ++i)
+            processTree(children[Math.round(i)], deep + 1)
+
+        if (children.length % 2 === 0) ++counter
+        inOut.push({number: currentRoot.number, parent: currentRoot.parent, x: counter * 25, y: deep * 25})
+
+        for (let i = Math.round(children.length / 2); i < children.length; ++i) {
+            processTree(children[Math.round(i)], deep + 1)
+        }
+    }
+
+    function draw(currentRoot, canvas) {
+        let parent = inOut.find(vertex => vertex.number === currentRoot.parent)
+        let children = inOut.filter(vertex => vertex.parent === currentRoot.number)
+
+        if (parent) {
+            canvas.beginPath();
+            canvas.strokeStyle = 'black';
+            canvas.moveTo(parent.x, parent.y);
+            canvas.lineTo(currentRoot.x, currentRoot.y);
+            canvas.stroke();
+        }
+
+        canvas.beginPath();
+        canvas.arc(currentRoot.x, currentRoot.y, 5, 0, 2 * Math.PI);
+        canvas.font = "12px serif";
+        canvas.fillText(currentRoot.number, currentRoot.x + 5, currentRoot.y - 5);
+        canvas.fill();
+
+        for (let i = 0; i < children.length; ++i) {
+            draw(children[i], canvas)
+        }
+    }
+
+    execution()
+</script>
+
+</body>
+</html>
